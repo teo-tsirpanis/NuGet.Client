@@ -49,8 +49,8 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
         {
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _asyncServiceProvider = asyncServiceProvider ?? throw new ArgumentNullException(nameof(asyncServiceProvider));
-			Initialize();
-		}
+            Initialize();
+        }
 
         [Import]
         private Lazy<IConsoleStatus> ConsoleStatus { get; set; }
@@ -86,8 +86,8 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
 
         private IDisposable ProjectUpgradeHandler { get; set; }
 
-		private void Initialize()
-		{
+        private void Initialize()
+        {
             _vsMonitorSelection = new AsyncLazy<vsShellInterop.IVsMonitorSelection>(
                 async () =>
                 {
@@ -132,7 +132,7 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
         private async Task OpenPackageManagerUIAsync(WorkspaceVisualNodeBase workspaceVisualNodeBase)
         {
             await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-        	await ShowPackageManagerUI(workspaceVisualNodeBase.NodeMoniker);
+            await ShowPackageManagerUI(workspaceVisualNodeBase.NodeMoniker);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
 
 
         private vsShellInterop.IVsWindowFrame FindExistingWindowFrame(
-			string projectPath)
+            string projectPath)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -293,9 +293,7 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
 
             var vsWindowSearchHostfactory = await _asyncServiceProvider.GetServiceAsync(typeof(vsShellInterop.SVsWindowSearchHostFactory)) as vsShellInterop.IVsWindowSearchHostFactory;
             var vsShell = await _asyncServiceProvider.GetServiceAsync(typeof(vsShellInterop.SVsShell)) as vsShellInterop.IVsShell4;
-
             var control = new PackageManagerControl(model, Settings.Value, vsWindowSearchHostfactory, vsShell, OutputConsoleLogger.Value);
-            var windowPane = new PackageManagerToolWindowPane(control);
 
             var caption = string.Format(
                 CultureInfo.CurrentCulture,
@@ -308,33 +306,24 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
             var hr = 0;
             int[] pfDefaultPosition = null;
 
-            try
-            {
-                hr = uiShell.CreateToolWindow(
-                    (uint)__VSCREATETOOLWIN.CTW_fInitNew,
-                    0,              // dwToolWindowId - singleInstance = 0
-                    windowPane,     // ToolWindowPane
-                    Guid.Empty,     // rclsidTool = GUID_NULL
-                    Guid.NewGuid(), // TODO: should be projectGuid...so persistance info works.
-                    Guid.Empty,     // reserved - do not use - GUID_NULL
-                    null,           // IServiceProvider
-                    caption,
-                    pfDefaultPosition,
-                    out windowFrame);
+            var windowPane = new PackageManagerToolWindowPane(control);
+            hr = uiShell.CreateToolWindow(
+                (uint)__VSCREATETOOLWIN.CTW_fInitNew,
+                0,              // dwToolWindowId - singleInstance = 0
+                windowPane,     // ToolWindowPane
+                Guid.Empty,     // rclsidTool = GUID_NULL
+                Guid.NewGuid(), // TODO: should be projectGuid...so persistance info works.
+                Guid.Empty,     // reserved - do not use - GUID_NULL
+                null,           // IServiceProvider
+                caption,
+                pfDefaultPosition,
+                out windowFrame);
 
-                if (windowFrame != null)
-                {
-                    WindowFrameHelper.AddF1HelpKeyword(windowFrame, keywordValue: F1KeywordValuePmUI);
-                    WindowFrameHelper.DisableWindowAutoReopen(windowFrame);
-                    WindowFrameHelper.DockToolWindow(windowFrame);
-                }
-            }
-            finally
+            if (windowFrame != null)
             {
-                if (windowPane != null)
-                {
-                    windowPane.Dispose();
-                }
+                WindowFrameHelper.AddF1HelpKeyword(windowFrame, keywordValue: F1KeywordValuePmUI);
+                WindowFrameHelper.DisableWindowAutoReopen(windowFrame);
+                WindowFrameHelper.DockToolWindow(windowFrame);
             }
 
             ErrorHandler.ThrowOnFailure(hr);
