@@ -312,7 +312,7 @@ namespace NuGet.VisualStudio.OnlineEnvironment.Client
                 0,              // dwToolWindowId - singleInstance = 0
                 windowPane,     // ToolWindowPane
                 Guid.Empty,     // rclsidTool = GUID_NULL
-                Guid.NewGuid(), // TODO: should be projectGuid...so persistance info works.
+                Guid.NewGuid(), // TODO: should be projectGuid...so persistance info works: https://github.com/NuGet/Home/issues/9636
                 Guid.Empty,     // reserved - do not use - GUID_NULL
                 null,           // IServiceProvider
                 caption,
