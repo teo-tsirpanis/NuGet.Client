@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,7 +17,7 @@ namespace NuGet.PackageManagement.UI
     /// <summary>
     /// The panel which is located at the top of the package manager window.
     /// </summary>
-    public partial class PackageManagerTopPanel : UserControl
+    public partial class PackageManagerTopPanel : UserControl, INotifyPropertyChanged
     {
         private TabItem SelectedTabItem
         {
@@ -32,10 +33,11 @@ namespace NuGet.PackageManagement.UI
         public TabItem TabConsolidate { get; private set; }
         public Border CountConsolidateContainer { get; private set; }
         public TextBlock CountConsolidate { get; private set; }
-
+        
         public PackageManagerTopPanel()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         public void CreateAndAddConsolidateTab()
@@ -161,7 +163,41 @@ namespace NuGet.PackageManagement.UI
 
         public ToolTip SourceToolTip => _sourceTooltip;
 
-        public ItemFilter Filter { get; private set; }
+        private ItemFilter _filter;
+
+        public ItemFilter Filter
+        {
+            get
+            {
+                return _filter;
+            }
+            set
+            {
+                if (_filter != value)
+                {
+                    _filter = value;
+                    OnPropertyChanged(new DependencyPropertyChangedEventArgs(IsUpdatesTabProperty, null, IsUpdatesTab));
+                    //OnPropertyChanged(nameof(IsUpdatesTab));
+                }
+            }
+        }
+
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public static readonly DependencyProperty IsUpdatesTabProperty = DependencyProperty.Register(
+            nameof(IsUpdatesTab),
+            typeof(bool),
+            typeof(PackageManagerTopPanel));
+        public bool IsUpdatesTab
+        {
+            get
+            {
+                return Filter == ItemFilter.UpdatesAvailable;
+            }
+        }
 
         public string Title
         {
@@ -225,6 +261,7 @@ namespace NuGet.PackageManagement.UI
         public event EventHandler<EventArgs> PrereleaseCheckChanged;
 
         public event EventHandler<EventArgs> SourceRepoListSelectionChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public void SelectFilter(ItemFilter selectedFilter)
         {

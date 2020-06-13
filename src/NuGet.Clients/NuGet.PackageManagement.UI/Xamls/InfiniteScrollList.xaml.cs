@@ -51,9 +51,6 @@ namespace NuGet.PackageManagement.UI
 
         private const string LogEntrySource = "NuGet Package Manager";
 
-        // The count of packages that are selected
-        private int _selectedCount;
-
         public InfiniteScrollList()
             : this(new Lazy<JoinableTaskFactory>(() => NuGetUIThreadHelper.JoinableTaskFactory))
         {
@@ -77,8 +74,7 @@ namespace NuGet.PackageManagement.UI
 
             BindingOperations.EnableCollectionSynchronization(Items, _list.ItemsLock);
 
-            DataContext = Items;
-            CheckBoxesEnabled = false;
+            DataContext = this;//  DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
 
             _loadingStatusIndicator.PropertyChanged += LoadingStatusIndicator_PropertyChanged;
         }
@@ -96,21 +92,6 @@ namespace NuGet.PackageManagement.UI
             });
         }
 
-        // Indicates wether check boxes are enabled on packages
-        private bool _checkBoxesEnabled;
-
-        public bool CheckBoxesEnabled
-        {
-            get
-            {
-                return _checkBoxesEnabled;
-            }
-            set
-            {
-                _checkBoxesEnabled = value;
-            }
-        }
-
         public bool IsSolution { get; set; }
 
         public ObservableCollection<object> Items { get; } = new ObservableCollection<object>();
@@ -122,12 +103,54 @@ namespace NuGet.PackageManagement.UI
             }
         }
 
-        private int FilterCount
+        /// <summary>
+        /// Returns the view containing packages shown (without the loading status indicator) according to the UI Filter.
+        /// </summary>
+        private ListCollectionView ItemsListCollectionView
         {
             get
             {
-                var filteredCollectionView = new ListCollectionView(Items) { Filter = CollectionView.Filter };
-                return filteredCollectionView.Count;
+                var listItemsWithoutLoadingIndicator = Items.Where(item => item != _loadingStatusIndicator).ToArray();
+                var filteredCollectionView = CollectionViewSource.GetDefaultView(listItemsWithoutLoadingIndicator) as ListCollectionView;
+                filteredCollectionView.Filter = CollectionView.Filter;
+                return filteredCollectionView;
+            }
+        }
+
+        /// <summary>
+        /// Returns the count of packages shown (without the loading status indicator) according to the UI Filter.
+        /// </summary>
+        public int FilterCount
+        {
+            get
+            {
+                return ItemsListCollectionView.Count;
+            }
+        }
+        //public static readonly DependencyProperty FilterCountProperty = DependencyProperty.Register(
+        //    nameof(FilterCount),
+        //    typeof(int),
+        //    typeof(InfiniteScrollList),
+        //    new PropertyMetadata(0));
+
+        public bool SelectAllChecked
+        {
+            get
+            {
+                return FilterCount > 0 && ItemsListCollectionView.Cast<PackageItemListViewModel>().All(package => package.Selected);
+            }
+        }
+        //public static readonly DependencyProperty SelectAllCheckedProperty = DependencyProperty.Register(
+        //    nameof(SelectAllChecked),
+        //    typeof(bool),
+        //    typeof(InfiniteScrollList),
+        //    new PropertyMetadata(false));
+
+        public bool AnySelectedForUpdate
+        {
+            get
+            {
+                return FilterCount > 0 && ItemsListCollectionView.Cast<PackageItemListViewModel>().Any(package => package.Selected);
             }
         }
 
@@ -179,8 +202,6 @@ namespace NuGet.PackageManagement.UI
                 ClearPackageList();
                 return Task.CompletedTask;
             });
-
-            _selectedCount = 0;
 
             // triggers the package list loader
             LoadItems(selectedPackageItem, token, applyUIFilterUpdatesAvailable: tabToRender == ItemFilter.UpdatesAvailable);
@@ -300,8 +321,6 @@ namespace NuGet.PackageManagement.UI
                     }
                 }
 
-                UpdateCheckBoxStatus();
-
                 LoadItemsCompleted?.Invoke(this, EventArgs.Empty);
             });
         }
@@ -395,8 +414,6 @@ namespace NuGet.PackageManagement.UI
                         }
                     }
                 }
-
-                UpdateCheckBoxStatus();
 
                 LoadItemsCompleted?.Invoke(this, EventArgs.Empty);
             });
@@ -600,9 +617,7 @@ namespace NuGet.PackageManagement.UI
                     // add newly loaded items
                     foreach (var package in packages)
                     {
-                        package.PropertyChanged += Package_PropertyChanged;
                         Items.Add(package);
-                        _selectedCount = package.Selected ? _selectedCount + 1 : _selectedCount;
                     }
 
                     if (removed)
@@ -620,11 +635,6 @@ namespace NuGet.PackageManagement.UI
         /// </summary>
         private void ClearPackageList()
         {
-            foreach (var package in PackageItems)
-            {
-                package.PropertyChanged -= Package_PropertyChanged;
-            }
-
             Items.Clear();
             _loadingStatusBar.ItemsLoaded = 0;
         }
@@ -636,67 +646,6 @@ namespace NuGet.PackageManagement.UI
             foreach (var package in PackageItems)
             {
                 package.UpdatePackageStatus(installedPackages);
-            }
-        }
-
-        private void Package_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            var package = sender as PackageItemListViewModel;
-            if (e.PropertyName == nameof(package.Selected))
-            {
-                if (package.Selected)
-                {
-                    _selectedCount++;
-                }
-                else
-                {
-                    _selectedCount--;
-                }
-
-                UpdateCheckBoxStatus();
-            }
-        }
-
-        // Update the status of the _selectAllPackages check box and the Update button.
-        private void UpdateCheckBoxStatus()
-        {
-            if (!CheckBoxesEnabled)
-            {
-                // the current tab is not "updates"
-                _updateButtonContainer.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            int packageCount = FilterCount;// CollectionView.Count;
-
-            if (packageCount > 0)
-            {
-                if (Items[packageCount - 1] == _loadingStatusIndicator)
-                {
-                    packageCount--;
-                }
-            }
-
-            // update the container's visibility
-            _updateButtonContainer.Visibility =
-                packageCount > 0 ?
-                Visibility.Visible :
-                Visibility.Collapsed;
-
-            if (_selectedCount == 0)
-            {
-                _selectAllPackages.IsChecked = false;
-                _updateButton.IsEnabled = false;
-            }
-            else if (_selectedCount < packageCount)
-            {
-                _selectAllPackages.IsChecked = null;
-                _updateButton.IsEnabled = true;
-            }
-            else
-            {
-                _selectAllPackages.IsChecked = true;
-                _updateButton.IsEnabled = true;
             }
         }
 

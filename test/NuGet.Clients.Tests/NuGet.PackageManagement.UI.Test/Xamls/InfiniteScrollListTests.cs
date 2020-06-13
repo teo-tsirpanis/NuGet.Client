@@ -47,14 +47,6 @@ namespace NuGet.PackageManagement.UI.Test
             Assert.Equal("joinableTaskFactory", exception.ParamName);
         }
 
-        [WpfFact]
-        public void CheckBoxesEnabled_Initialized_DefaultIsFalse()
-        {
-            var list = new InfiniteScrollList();
-
-            Assert.False(list.CheckBoxesEnabled);
-        }
-
         public void DataContext_Initialized_DefaultIsItems()
         {
             var list = new InfiniteScrollList();

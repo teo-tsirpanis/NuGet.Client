@@ -276,6 +276,26 @@
       BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
       BorderThickness="0,0,0,1"
       Background="{DynamicResource {x:Static nuget:Brushes.LegalMessageBackground}}">
+      <Border.Style>
+        <Style TargetType="Border">
+          <Style.Triggers>
+            <DataTrigger
+              Binding="{Binding Path=IsUpdatesTab, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type nuget:PackageManagerTopPanel}}}"
+              Value="True">
+              <DataTrigger.Setters>
+                <Setter Property="Visibility" Value="Visible" />
+              </DataTrigger.Setters>
+            </DataTrigger>
+            <DataTrigger
+              Binding="{Binding Path=IsUpdatesTab, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type nuget:PackageManagerTopPanel}}}"
+              Value="False">
+              <DataTrigger.Setters>
+                <Setter Property="Visibility" Value="Collapsed" />
+              </DataTrigger.Setters>
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </Border.Style>
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="auto" />
@@ -290,7 +310,9 @@
           Checked="SelectAllPackagesCheckBox_Checked"
           Unchecked="SelectAllPackagesCheckBox_Unchecked"
           Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
-          Content="{x:Static nuget:Resources.Checkbox_SelectAllPackages}" />
+          Content="{x:Static nuget:Resources.Checkbox_SelectAllPackages}"
+          IsChecked="{Binding SelectAllChecked, Mode=OneWay}">
+        </CheckBox>
         <Button
           x:Name="_updateButton"
           Grid.Column="2"
@@ -299,7 +321,8 @@
           Margin="24,8"
           VerticalAlignment="Center"
           Click="_updateButton_Click"
-          Content="{x:Static nuget:Resources.Button_Update}" />
+          Content="{x:Static nuget:Resources.Button_Update}"
+          IsEnabled="{Binding AnySelectedForUpdate, Mode=OneWay}" />
       </Grid>
     </Border>
     <Grid
@@ -342,7 +365,7 @@
       HorizontalContentAlignment="Stretch"
       SelectionChanged="List_SelectionChanged"
       Loaded="List_Loaded"
-      ItemsSource="{Binding}">
+      ItemsSource="{Binding Items}">
       <!-- set the template to disable the background change when the IsEnabled is false. -->
       <ListBox.Template>
         <ControlTemplate

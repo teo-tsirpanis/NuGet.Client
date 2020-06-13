@@ -168,7 +168,6 @@ namespace NuGet.PackageManagement.UI
             _initialized = true;
 
             // UI is initialized. Start the first search
-            _packageList.CheckBoxesEnabled = _topPanel.Filter == ItemFilter.UpdatesAvailable;
             _packageList.IsSolution = Model.IsSolution;
 
             Loaded += PackageManagerLoaded;
@@ -1156,7 +1155,6 @@ namespace NuGet.PackageManagement.UI
             if (_initialized)
             {
                 var timeSpan = GetTimeSinceLastRefreshAndRestart();
-                _packageList.CheckBoxesEnabled = _topPanel.Filter == ItemFilter.UpdatesAvailable;
 
                 // Set a new cancellation token source which will be used to cancel this task in case
                 // new loading task starts or manager ui is closed while loading packages.
